@@ -1,0 +1,16 @@
+# Веб фреймворки
+fastapi
+uvicorn[standard]
+pydantic-settings
+
+# Брокер сообщений 
+faststream[rabbit]
+
+# БД и ORM
+sqlalchemy[asyncio]
+asyncpg
+psycopg2-binary
+
+# Скрапинг и Утилиты
+httpx
+beautifulsoup4
