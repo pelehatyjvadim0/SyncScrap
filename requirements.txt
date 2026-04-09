@@ -4,13 +4,15 @@ uvicorn[standard]
 pydantic-settings
 
 # Брокер сообщений 
-faststream[rabbit]
+faststream[rabbit,cli]
 
 # БД и ORM
 sqlalchemy[asyncio]
 asyncpg
 psycopg2-binary
+alembic
 
 # Скрапинг и Утилиты
 httpx
 beautifulsoup4
+aiofiles

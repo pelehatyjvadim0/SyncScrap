@@ -1,6 +1,11 @@
 services:
   db:
     image: postgres:15-alpine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     ports:
       - '${DB_PORT}:5432'
     environment:
@@ -16,13 +21,29 @@ services:
     ports:
       - '8000:8000'
     depends_on:
-      - db
-      - rabbit
+      db:
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
     volumes:
       - .:/app
   
   rabbit:
     image: rabbitmq:3-management
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", '-q', 'check_running']
+      interval: 5s
+      timeout: 5s
+      retries: 5
     ports:
       - '15672:15672'
       - '5672:5672'
+    
+  worker:
+    build: .
+    command: faststream run worker_init:faststream_app
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
