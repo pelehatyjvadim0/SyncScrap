@@ -1,3 +1,4 @@
-from app.core.rabbitmq import faststream_app
-import app.workers.scraper 
-import app.workers.db_worker
+from root.shared.rabbitmq import faststream_app
+import root.worker_downloader.main
+import root.worker_parser.main
+import root.worker_db.main
