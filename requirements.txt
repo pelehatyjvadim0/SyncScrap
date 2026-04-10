@@ -16,3 +16,5 @@ alembic
 httpx
 beautifulsoup4
 aiofiles
+
+redis 

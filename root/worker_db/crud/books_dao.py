@@ -1,7 +1,7 @@
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.books import Books
+from root.worker_db.models.books import Books
 
 
 class BooksDAO:

@@ -1,12 +1,14 @@
-from app.core.database import sessionmaker
+from root.shared.database.database_settings import sessionmaker
+from root.shared.resources import res
+from root.shared.redis_client import RedisManager
 from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import httpx
-
 
 class DependsGenerator:
+    RESOURCES = res
+
     @staticmethod
     async def get_db():
         async with sessionmaker() as session:
@@ -15,10 +17,10 @@ class DependsGenerator:
             except Exception:
                 await session.rollback()
 
-    @staticmethod
-    async def get_httpx_client():
-        async with httpx.AsyncClient() as client:
-            yield client
+    @classmethod
+    async def get_storage(cls):
+        return await cls.RESOURCES.get_storage()
 
 
 SessionDep = Annotated[AsyncSession, Depends(DependsGenerator.get_db)]
+StorageDep = Annotated[RedisManager, Depends(DependsGenerator.get_storage)]

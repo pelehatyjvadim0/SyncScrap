@@ -5,10 +5,10 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from app.core.models import BaseModel
-from app.models.books import Books
+from root.shared.database.base_model import BaseModel
+from root.worker_db.models.books import Books
 
-from app.core.config import settings
+from root.shared.config import settings
 
 from alembic import context
 
