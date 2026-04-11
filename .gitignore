@@ -3,6 +3,8 @@ __pycache__/
 *$py.class
 .venv/
 venv/
+.tvenv/
+.venv_tests/
 *.egg-info/
 .env
 pgdata/
@@ -12,3 +14,11 @@ alembic.log
 .idea/
 .DS_Store
 .docker_data/
+.cursor/
+.pytest_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.log
+*.AppImage

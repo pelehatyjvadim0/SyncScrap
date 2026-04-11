@@ -16,10 +16,10 @@ class RedisManager:
             raise RuntimeError("Redis client is not connected")
         await self.redis.set(f'page:{key}', html, ex=expire)
         
-    async def get_html(self, key: str) -> str:
+    async def get_html(self, key: str) -> str | None:
         if self.redis is None:
             raise RuntimeError("Redis client is not connected")
-        return await self.redis.get(f'page:{key}')
+        return await self.redis.get(f"page:{key}")
     
     async def delete_html(self, key: str):
         if self.redis is None:

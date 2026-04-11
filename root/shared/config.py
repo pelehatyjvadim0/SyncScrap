@@ -8,6 +8,10 @@ class DB_Settings(BaseSettings):
     PORT: int = 5432
     NAME: str = "user_db"
     HOST: str = "localhost"
+    POOL_SIZE: int = 10
+    MAX_OVERFLOW: int = 20
+    POOL_PRE_PING: bool = True
+    POOL_RECYCLE: int = 1800
 
     @property
     def DATABASE_URL(self):
@@ -59,11 +63,32 @@ class DownloaderSettings(BaseSettings):
     )
 
 
+class SchedulerSettings(BaseSettings):
+    """Периодическая отправка целей из БД в raw_urls."""
+
+    ENABLED: bool = False
+    INTERVAL_SECONDS: int = 300
+    """Интервал между тиками планировщика."""
+    STALE_AFTER_SECONDS: int = 3600
+    """Считать URL «устаревшим», если last_scraped_at старше N секунд (UTC)."""
+    MAX_URLS_PER_TICK: int = 500
+    """Защита от пика: не больше URL за один тик."""
+    PUBLISH_GAP_SECONDS: float = 0.02
+    """Пауза между publish в Rabbit (снижает пик нагрузки на брокер)."""
+    FORCE_REFRESH: bool = True
+    """Передавать force_refresh в очередь (обход Redis HTML)."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="SCHEDULER_", env_file=".env", extra="ignore"
+    )
+
+
 class Settings(BaseSettings):
     db: DB_Settings = DB_Settings()
     rabbit: RabbitMq_Settings = RabbitMq_Settings()
     redis: RedisSettings = RedisSettings()
     downloader: DownloaderSettings = DownloaderSettings()
+    scheduler: SchedulerSettings = SchedulerSettings()
 
 
 settings = Settings()

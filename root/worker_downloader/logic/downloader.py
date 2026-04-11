@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class DownloaderLogic:
+    @staticmethod
     async def _handle_download_error(
         exc: Exception,
         url: str,
@@ -90,14 +91,14 @@ class DownloaderLogic:
 
     @staticmethod
     async def download_url(
-        httpx_client: AsyncClient,
+        http_client: AsyncClient,
         url: str,
         max_retries: int = 3,
         base_delay_seconds: float = 0.5,
     ) -> str:
         for attempt in range(1, max_retries + 1):
             try:
-                response = await httpx_client.get(url, follow_redirects=True)
+                response = await http_client.get(url, follow_redirects=True)
                 response.raise_for_status()
 
                 html = response.text

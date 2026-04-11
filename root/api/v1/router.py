@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from root.api.v1.scraper_utils import ScraperUtils
-from root.api.v1.url_spawner import URLSpawner
+from root.shared.url_spawner import URLSpawner
 
 router = APIRouter()
 

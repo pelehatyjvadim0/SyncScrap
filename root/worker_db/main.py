@@ -19,7 +19,7 @@ async def handle_db(msg) -> None:
 
     items = payload.get("items", [])
     if not items:
-        logger.warning("No items received for DB worker")
+        logger.warning(" [DB] Пустой список items в EXTRACTED_DATA — пропуск")
         return
 
     async with sessionmaker() as session:
@@ -35,12 +35,12 @@ async def handle_db(msg) -> None:
                 await BooksDAO.upsert_book(session, book_data)
 
             await session.commit()
-            logger.info("Saved %s items to database", len(items))
+            logger.info(" [DB] Сохранено в БД записей (items): %s", len(items))
         except ValidationError as exc:
             await session.rollback()
-            logger.error("Book validation failed: %s", exc)
+            logger.error(" [DB] Ошибка валидации книги: %s", exc)
             raise
         except Exception:
             await session.rollback()
-            logger.exception("Database worker failed")
+            logger.exception(" [DB] Ошибка воркера записи в БД")
             raise
