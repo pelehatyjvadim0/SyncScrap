@@ -1,0 +1,7 @@
+faststream[rabbit, cli]
+httpx
+pydantic-settings
+redis
+fastapi
+sqlalchemy[asyncio]
+asyncpg
