@@ -1,4 +1,4 @@
-from root.shared.database.database_settings import sessionmaker
+from root.persistence.connection import sessionmaker
 from root.shared.resources import res
 from root.shared.redis_client import RedisManager
 from typing import Annotated
