@@ -15,7 +15,7 @@ class URLSpawner:
     async def append_urls_in_queue(
         cls,
         list_urls: list[str],
-        *,
+        *, # аргументы до звёздочки - позиционные, после звёздочки - все именованные, тут это контракт на именованные аргументы!!!!!!
         force_refresh: bool = False,
         publish_gap_seconds: float = 0.0,
     ) -> list[str]:
@@ -33,7 +33,7 @@ class URLSpawner:
         for i, url in enumerate(list_urls):
             try:
                 payload = RawUrlMessage(url=HttpUrl(url), force_refresh=force_refresh)
-                await broker.publish(message=payload.model_dump_json(), queue=RAW_URLS)
+                await broker.publish(message=payload.model_dump_json(), queue=RAW_URLS) # в json дампим чтобы из httpurl перевести в строку
                 sent.append(url)
                 logger.debug(" [↑] Отправлено в raw_urls (%s/%s): %s", i + 1, len(list_urls), url)
             except Exception as exc:
