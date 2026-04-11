@@ -1,11 +1,12 @@
 import logging
 
-from root.shared.rabbitmq import broker, faststream_app, router
-from root.shared.dependencies import StorageDep
 from pydantic import ValidationError
+
+from root.shared.queues import DOWNLOADED_PAGES, EXTRACTED_DATA
+from root.shared.rabbitmq import broker, faststream_app
+from root.shared.resources import res
 from root.worker_parser.logic.coordinator import ParserCoordinator
 from root.worker_parser.logic.service import ParserService
-from root.shared.queues import DOWNLOADED_PAGES, EXTRACTED_DATA
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,9 +18,10 @@ logger = logging.getLogger(__name__)
 coordinator = ParserCoordinator()
 
 
-@router.subscriber(DOWNLOADED_PAGES)
-async def handle_url(msg, storage: StorageDep):
+@broker.subscriber(DOWNLOADED_PAGES)
+async def handle_url(msg):
     try:
+        storage = await res.get_storage()
         message = ParserService.parse_downloaded_message(msg)
         logger.info(" [→] Получена задача на парсинг. URL: %s", message.url)
 
