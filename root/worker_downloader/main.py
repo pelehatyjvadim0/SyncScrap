@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from root.worker_downloader.logic.downloader import DownloaderLogic
 from root.worker_downloader.dependencies import HttpClientDep
 from root.shared.rabbitmq import faststream_app
-from root.worker_downloader.logic.schemas import RawUrlMessage
+from root.shared.schemas import RawUrlMessage
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 async def handle_url(msg, http_client: HttpClientDep, storage: StorageDep):
     url = None
     try:
-        raw_value = msg.body.decode() if hasattr(msg, "body") else msg
-        payload = {"url": raw_value} if isinstance(raw_value, str) else raw_value
+        msg_data = msg.body.decode() if hasattr(msg, "body") else msg
+        payload = {"url": msg_data.get('url')} if isinstance(msg_data, dict) else msg_data
         validated_message = RawUrlMessage.model_validate(payload)
         url = str(validated_message.url)
         logger.info(f" [→] URL получен: {url}")
@@ -26,7 +26,7 @@ async def handle_url(msg, http_client: HttpClientDep, storage: StorageDep):
         redis_key = await DownloaderUtils.get_url_hash(url)
         cached_html = await storage.get_html(redis_key)
 
-        if cached_html is not None:
+        if cached_html is not None and msg_data.get('force_refresh') is False:
             logger.info(f" [↻] Найден HTML в Redis, повторная загрузка не требуется. URL: {url}")
         else:
             html = await DownloaderLogic.download_url(

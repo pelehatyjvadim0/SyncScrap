@@ -1,9 +1,4 @@
-from pydantic import BaseModel, HttpUrl
 from typing import Protocol
-
-
-class RawUrlMessage(BaseModel):
-    url: HttpUrl
 
 
 class StorageProtocol(Protocol):

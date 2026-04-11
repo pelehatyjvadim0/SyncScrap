@@ -3,11 +3,11 @@ import logging
 
 from pydantic import ValidationError
 
-from root.shared.database.database_settings import sessionmaker
+from root.persistence.connection import sessionmaker
+from root.persistence.dao.books import BooksDAO
 from root.shared.queues import EXTRACTED_DATA
 from root.shared.rabbitmq import broker, faststream_app
 from root.shared.schemas.book import SBookBase
-from root.worker_db.crud.books_dao import BooksDAO
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ async def handle_db(msg) -> None:
                     "availability": item.get("availability"),
                     "source_page": payload.get("url"),
                 }
-                await BooksDAO.add_book(session, book_data)
+                await BooksDAO.upsert_book(session, book_data)
 
             await session.commit()
             logger.info("Saved %s items to database", len(items))

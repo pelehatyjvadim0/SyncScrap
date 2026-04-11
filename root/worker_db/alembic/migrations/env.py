@@ -5,8 +5,10 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from root.shared.database.base_model import BaseModel
-from root.worker_db.models.books import Books
+import root.persistence.models.books  # noqa: F401 — регистрация таблицы в metadata
+import root.persistence.models.target  # noqa: F401
+
+from root.persistence.models.base import BaseModel
 
 from root.shared.config import settings
 

@@ -2,7 +2,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import Numeric, func, String
 from sqlalchemy.dialects.postgresql import JSONB
 from decimal import Decimal
-from root.shared.database.base_model import BaseModel
+from root.persistence.models.base import BaseModel
 from datetime import datetime
 
 
