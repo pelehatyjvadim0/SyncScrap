@@ -14,6 +14,30 @@ class InvalidTargetUrlError(Exception):
         super().__init__(f"Невалидный URL: {url}")
 
 
+def _normalize_urls(urls: list[str]) -> list[str]:
+    """Валидация и каноническая строка HttpUrl; длина совпадает с len(urls)."""
+    out: list[str] = []
+    for url in urls:
+        try:
+            RawUrlMessage(url=HttpUrl(url), force_refresh=False)
+        except ValidationError as exc:
+            raise InvalidTargetUrlError(url) from exc
+        out.append(str(HttpUrl(url)))
+    return out
+
+
+def _unique_in_order(urls: list[str]) -> tuple[list[str], int]:
+    """
+    Уникальные URL в порядке первого вхождения.
+    Второе значение — сколько позиций в исходном списке были повторами уже виденного URL.
+    """
+    if not urls:
+        return [], 0
+    unique = list(dict.fromkeys(urls)) # убираем повторяющиеся urls {'unqie_url': None...} затем приводим к list и сохраняем порядок и уникальность
+    duplicate_in_request = len(urls) - len(unique)
+    return unique, duplicate_in_request
+
+
 class BulkTargetsService:
     @staticmethod
     async def add_urls(session: AsyncSession, urls: list[str]) -> BulkTargetsResponse:
@@ -21,23 +45,8 @@ class BulkTargetsService:
         if total == 0:
             return BulkTargetsResponse(total=0, inserted=0, duplicates=0)
 
-        normalized: list[str] = []
-        for url in urls:
-            try:
-                RawUrlMessage(url=HttpUrl(url), force_refresh=False)
-            except ValidationError as exc:
-                raise InvalidTargetUrlError(url) from exc
-            normalized.append(str(HttpUrl(url)))
-
-        seen: set[str] = set()
-        unique_urls: list[str] = []
-        duplicate_in_request = 0
-        for u in normalized:
-            if u in seen:
-                duplicate_in_request += 1
-                continue
-            seen.add(u)
-            unique_urls.append(u)
+        normalized = _normalize_urls(urls)
+        unique_urls, duplicate_in_request = _unique_in_order(normalized)
 
         if not unique_urls:
             return BulkTargetsResponse(total=total, inserted=0, duplicates=total)

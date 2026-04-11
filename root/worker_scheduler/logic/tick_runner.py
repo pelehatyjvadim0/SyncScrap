@@ -34,12 +34,8 @@ class SchedulerTickRunner:
 
         if not urls:
             logger.info(
-                " [⏰] Целей к отправке нет. Порог last_scraped_at < %s (UTC naive). "
-                "Берутся строки с last_scraped_at IS NULL или старше чем now−STALE_AFTER "
-                "(%ss). Если всё недавно отмечено скрапом — подождите или уменьшите "
-                "SCHEDULER_STALE_AFTER_SECONDS.",
+                " [⏰] Целей к отправке нет. Порог last_scraped_at < %s (UTC naive). ",
                 threshold.isoformat(),
-                settings.scheduler.STALE_AFTER_SECONDS,
             )
             return
 

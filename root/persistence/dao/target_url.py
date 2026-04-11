@@ -39,7 +39,7 @@ class TargetUrlDAO:
     @staticmethod
     async def fetch_due_urls(
         session: AsyncSession,
-        *,
+        *, # первый аргумент до звёздочки - позиционный, после звёздочки - все именованные, тут это контракт на именованные аргументы!!!!!!
         older_than: datetime,
         limit: int,
     ) -> list[str]:
