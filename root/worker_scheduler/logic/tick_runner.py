@@ -18,7 +18,7 @@ def _due_threshold_naive_utc() -> datetime:
 
 
 class SchedulerTickRunner:
-    """Один тик: выбрать цели → raw_urls → отметить last_scraped_at только для успешно отправленных."""
+    """Один тик: выбрать цели → публикация в raw_urls. last_scraped_at ставит worker_db после записи книг."""
 
     async def run_tick(self) -> None:
         if not settings.scheduler.ENABLED:
@@ -33,9 +33,13 @@ class SchedulerTickRunner:
             )
 
         if not urls:
-            logger.debug(
-                " [⏰] Тик планировщика: целей нет (порог=%s)",
+            logger.info(
+                " [⏰] Целей к отправке нет. Порог last_scraped_at < %s (UTC naive). "
+                "Берутся строки с last_scraped_at IS NULL или старше чем now−STALE_AFTER "
+                "(%ss). Если всё недавно отмечено скрапом — подождите или уменьшите "
+                "SCHEDULER_STALE_AFTER_SECONDS.",
                 threshold.isoformat(),
+                settings.scheduler.STALE_AFTER_SECONDS,
             )
             return
 
@@ -48,20 +52,7 @@ class SchedulerTickRunner:
         )
 
         if not sent:
-            logger.warning(" [⏰] В raw_urls ничего не ушло — last_scraped_at не обновляем")
+            logger.warning(" [⏰] В raw_urls ничего не ушло")
             return
 
-        async with sessionmaker() as session:
-            try:
-                await TargetUrlDAO.mark_urls_scraped(session, sent)
-                await session.commit()
-                logger.info(
-                    " [⏰] last_scraped_at обновлён для успешно отправленных: %s",
-                    len(sent),
-                )
-            except Exception:
-                await session.rollback()
-                logger.exception(
-                    " [⏰] Ошибка при сохранении last_scraped_at (откат транзакции)"
-                )
-                raise
+        logger.info(" [⏰] Опубликовано в raw_urls: %s", len(sent))

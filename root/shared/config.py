@@ -38,15 +38,29 @@ class RabbitMq_Settings(BaseSettings):
 
 
 class RedisSettings(BaseSettings):
-    USERNAME: str = "redis"
-    PASSWORD: str = "redis"
+
+    CONNECTION_URL: str | None = None
+    USERNAME: str = ""
+    PASSWORD: str = ""
     HOST: str = "localhost"
     PORT: int = 6379
 
     @property
-    def REDIS_URL(self):
-        password = quote_plus(self.PASSWORD)
-        return f"redis://{self.USERNAME}:{password}@{self.HOST}:{self.PORT}/0"
+    def REDIS_URL(self) -> str:
+        direct = (self.CONNECTION_URL or "").strip()
+        if direct:
+            return direct
+
+        host = self.HOST
+        port = self.PORT
+        user = (self.USERNAME or "").strip()
+        pwd_raw = self.PASSWORD or ""
+
+        if not user and not pwd_raw:
+            return f"redis://{host}:{port}/0"
+        if not user and pwd_raw:
+            return f"redis://:{quote_plus(pwd_raw)}@{host}:{port}/0"
+        return f"redis://{quote_plus(user)}:{quote_plus(pwd_raw)}@{host}:{port}/0"
 
     model_config = SettingsConfigDict(
         env_prefix="REDIS_", env_file=".env", extra="ignore"
@@ -66,8 +80,8 @@ class DownloaderSettings(BaseSettings):
 class SchedulerSettings(BaseSettings):
     """Периодическая отправка целей из БД в raw_urls."""
 
-    ENABLED: bool = False
-    INTERVAL_SECONDS: int = 300
+    ENABLED: bool = True
+    INTERVAL_SECONDS: int = 80
     """Интервал между тиками планировщика."""
     STALE_AFTER_SECONDS: int = 3600
     """Считать URL «устаревшим», если last_scraped_at старше N секунд (UTC)."""

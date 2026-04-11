@@ -1,6 +1,12 @@
 import asyncio
 import logging
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
+)
+
 from root.shared.config import settings
 from root.shared.rabbitmq import faststream_app
 from root.worker_scheduler.logic.tick_runner import SchedulerTickRunner
@@ -24,6 +30,7 @@ async def _scheduler_loop() -> None:
                 " [⏰] Ошибка тика планировщика; следующая попытка через %ss",
                 interval,
             )
+        logger.info(" [⏰] Следующая попытка через %ss", interval)
         await asyncio.sleep(interval)
 
 

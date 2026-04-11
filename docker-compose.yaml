@@ -1,49 +1,165 @@
+# Запуск: docker compose up -d --build
+# Переменные БД/брокера подставляются из .env рядом с этим файлом.
+# Для сервисов в Docker хосты заданы в environment (postgres / rabbitmq / redis).
+
 services:
-  db:
+  # --- Инфраструктура (сначала поднимаются и становятся healthy) ---
+  postgres:
     image: postgres:15-alpine
+    container_name: scraping_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-user_db}
+    ports:
+      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-user_db}",
+        ]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 15s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: scraping_rabbit
+    restart: unless-stopped
     ports:
-      - '${DB_PORT}:5432'
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
-  
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 8
+      start_period: 45s
+
+  redis:
+    image: redis:7-alpine
+    container_name: scraping_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 8
+      start_period: 5s
+
+  # --- API ---
   api:
-    build: .
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-    env_file:
-      - .env
+    build:
+      context: .
+      dockerfile: root/api/Dockerfile
+    container_name: scraping_api
+    restart: unless-stopped
     ports:
-      - '8000:8000'
+      - "8000:8000"
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
-      rabbit:
+      rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
+      REDIS_HOST: redis
+      # Образ redis без ACL - явный URL, чтобы не подтянулись старые REDIS_USERNAME из окружения хоста
+      REDIS_CONNECTION_URL: redis://redis:6379/0
+
     volumes:
       - .:/app
-  
-  rabbit:
-    image: rabbitmq:3-management
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", '-q', 'check_running']
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    ports:
-      - '15672:15672'
-      - '5672:5672'
-    
-  worker:
-    build: .
-    command: faststream run worker_init:faststream_app
+    command:
+      [
+        "uvicorn",
+        "root.api.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload",
+      ]
+
+  # --- Воркеры ---
+  downloader:
+    build:
+      context: .
+      dockerfile: root/worker_downloader/Dockerfile
+    container_name: worker_downloader
+    restart: unless-stopped
     depends_on:
-      db:
+      rabbitmq:
         condition: service_healthy
-      rabbit:
+      redis:
         condition: service_healthy
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
+      REDIS_HOST: redis
+      REDIS_CONNECTION_URL: redis://redis:6379/0
+
+  parser:
+    build:
+      context: .
+      dockerfile: root/worker_parser/Dockerfile
+    container_name: worker_parser
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
+      REDIS_HOST: redis
+      REDIS_CONNECTION_URL: redis://redis:6379/0
+
+  db_worker:
+    build:
+      context: .
+      dockerfile: root/worker_db/Dockerfile
+    container_name: worker_db
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: root/worker_scheduler/Dockerfile
+    container_name: worker_scheduler
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
+    command:
+      [
+        "sh",
+        "-c",
+        "alembic -c root/persistence/alembic.ini upgrade head && exec faststream run root.worker_scheduler.main:faststream_app",
+      ]

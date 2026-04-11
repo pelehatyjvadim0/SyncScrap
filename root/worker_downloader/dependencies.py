@@ -1,6 +1,8 @@
 from typing import Annotated
+
+from fastapi import Depends
 from httpx import AsyncClient
-from faststream import Depends
+
 from root.shared.resources import res
 
 

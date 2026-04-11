@@ -1,17 +1,23 @@
 import logging
-from root.shared.rabbitmq import broker
-from root.shared.rabbitmq import faststream_app
+
+from root.shared.rabbitmq import broker, faststream_app, router
 from root.shared.dependencies import StorageDep
 from pydantic import ValidationError
 from root.worker_parser.logic.coordinator import ParserCoordinator
 from root.worker_parser.logic.service import ParserService
 from root.shared.queues import DOWNLOADED_PAGES, EXTRACTED_DATA
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
+)
+
 logger = logging.getLogger(__name__)
 coordinator = ParserCoordinator()
 
 
-@broker.subscriber(DOWNLOADED_PAGES)
+@router.subscriber(DOWNLOADED_PAGES)
 async def handle_url(msg, storage: StorageDep):
     try:
         message = ParserService.parse_downloaded_message(msg)
@@ -19,7 +25,7 @@ async def handle_url(msg, storage: StorageDep):
 
         result = await ParserService.parse_page(message, storage, coordinator)
         broker_payload = ParserService.serialize_for_broker(result)
-        await broker.publish(broker_payload, EXTRACTED_DATA)
+        await broker.publish(message=broker_payload, queue=EXTRACTED_DATA)
 
         logger.info(
             " [✓] Парсинг завершен. URL: %s | Товаров: %s",

@@ -7,7 +7,7 @@ from root.shared.config import settings
 from root.shared.rabbitmq import broker
 from root.shared.queues import DOWNLOADED_PAGES
 from root.shared.redis_client import RedisManager
-from root.shared.schemas import RawUrlMessage
+from root.shared.schemas.raw_url_message import RawUrlMessage
 from root.worker_downloader.logic.downloader import DownloaderLogic
 from root.worker_downloader.logic.message_payload import (
     RawUrlPayloadError,
@@ -74,7 +74,10 @@ class DownloadWorkflow:
         logger.info(" [✓] HTML сохранён в Redis. url=%s ключ=%s", url, redis_key)
 
     async def _publish_downloaded(self, redis_key: str, url: str) -> None:
-        await broker.publish({"storage_key": redis_key, "url": url}, DOWNLOADED_PAGES)
+        await broker.publish(
+            message={"storage_key": redis_key, "url": url},
+            queue=DOWNLOADED_PAGES,
+        )
         logger.info(
             " [✓] Задача в очередь `%s`: url=%s",
             DOWNLOADED_PAGES.name,

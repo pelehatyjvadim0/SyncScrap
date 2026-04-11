@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from datetime import datetime, timezone
 
 from sqlalchemy import or_, select, update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from root.persistence.models.target import TargetUrl
@@ -13,6 +14,28 @@ _MARK_CHUNK_SIZE = 500
 
 
 class TargetUrlDAO:
+    @staticmethod
+    async def bulk_insert_new_urls(session: AsyncSession, urls: Sequence[str]) -> int:
+        """
+        Вставка только новых URL (`ON CONFLICT DO NOTHING` по `url`).
+        `urls` без повторов. Возвращает число реально вставленных строк.
+        """
+        if not urls:
+            return 0
+        stmt = (
+            insert(TargetUrl)
+            .values(
+                [
+                    {"url": u, "last_scraped_at": None, "is_active": True}
+                    for u in urls
+                ]
+            )
+            .on_conflict_do_nothing(index_elements=["url"])
+            .returning(TargetUrl.id)
+        )
+        result = await session.execute(stmt)
+        return len(result.scalars().all())
+
     @staticmethod
     async def fetch_due_urls(
         session: AsyncSession,
@@ -36,8 +59,8 @@ class TargetUrlDAO:
             .order_by(TargetUrl.id.asc())
             .limit(limit)
         )
-        logger.debug(
-            " [DB] Выборка целей для скрапа: порог=%s, лимит=%s",
+        logger.info(
+            " [DB] Выборка целей: older_than=%s (UTC naive), лимит=%s",
             older_than.isoformat(),
             limit,
         )
