@@ -1,3 +1,4 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from urllib.parse import quote_plus
 
@@ -98,11 +99,13 @@ class SchedulerSettings(BaseSettings):
 
 
 class Settings(BaseSettings):
-    db: DB_Settings = DB_Settings()
-    rabbit: RabbitMq_Settings = RabbitMq_Settings()
-    redis: RedisSettings = RedisSettings()
-    downloader: DownloaderSettings = DownloaderSettings()
-    scheduler: SchedulerSettings = SchedulerSettings()
+    db: DB_Settings = Field(default_factory=DB_Settings)
+    rabbit: RabbitMq_Settings = Field(default_factory=RabbitMq_Settings)
+    redis: RedisSettings = Field(default_factory=RedisSettings)
+    downloader: DownloaderSettings = Field(default_factory=DownloaderSettings)
+    scheduler: SchedulerSettings = Field(default_factory=SchedulerSettings)
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 settings = Settings()

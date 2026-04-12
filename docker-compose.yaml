@@ -158,8 +158,13 @@ services:
       DB_HOST: postgres
       RABBITMQ_HOST: rabbitmq
     command:
-      [
-        "sh",
-        "-c",
-        "alembic -c root/persistence/alembic.ini upgrade head && exec faststream run root.worker_scheduler.main:faststream_app",
-      ]
+      - sh
+      - -c
+      - |
+          i=0
+          until getent hosts postgres >/dev/null 2>&1 && getent hosts rabbitmq >/dev/null 2>&1; do
+            i=$$((i+1))
+            if [ "$$i" -gt 90 ]; then echo "DNS: postgres/rabbitmq not resolvable"; exit 1; fi
+            sleep 1
+          done
+          alembic -c root/persistence/alembic.ini upgrade head && exec faststream run root.worker_scheduler.main:faststream_app
