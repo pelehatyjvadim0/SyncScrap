@@ -1,5 +1,5 @@
-# Фабрика долгоживущего AsyncSession: пул curl, таймаут ответа, дефолтный impersonate.
-# Совпадение с первым запросом не обязательно: fetch_url может переопределить impersonate на get.
+# Долгоживущий AsyncSession - пул curl, таймаут ответа, дефолтный impersonate.
+# fetch_url может задать другой impersonate на отдельном get.
 
 from typing import Any, cast
 
@@ -11,14 +11,13 @@ from root.shared.http_policy.profiles import HttpProfile
 
 
 class HTTPSessionFactory:
-
     def build(
         self,
         *,
         downloader_settings: DownloaderSettings,
         profile: HttpProfile | None = None,
     ) -> AsyncSession:
-        # Собирает AsyncSession: max_clients, timeout чтения ответа, trust_env для прокси из env.
+        # AsyncSession - max_clients, timeout ответа, trust_env для прокси из env
         impersonate = (
             profile.impersonate
             if profile is not None

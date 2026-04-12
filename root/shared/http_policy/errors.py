@@ -1,6 +1,9 @@
+# Ошибки валидации HttpProfile и резерв под строгий реестр.
+
+
 class HttpProfileError(ValueError):
-    """Некорректные поля HttpProfile при создании."""
+    pass
 
 
 class ProfileRegistryError(ValueError):
-    """Зарезервировано под строгий режим реестра (сейчас не используется)."""
+    pass

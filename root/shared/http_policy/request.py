@@ -1,7 +1,5 @@
-"""
-Один HTTP GET под политику: профиль (impersonate, headers), jitter, прокси на запрос.
-Anti-fraud - случайная пауза перед запросом и браузерный TLS-отпечаток (curl_cffi impersonate).
-"""
+# Один GET под политику - профиль impersonate-headers, jitter, прокси на запрос.
+# Anti-fraud - случайная пауза перед запросом и TLS-отпечаток curl_cffi impersonate.
 
 from __future__ import annotations
 
@@ -15,7 +13,7 @@ from curl_cffi.requests.models import Response
 
 from root.shared.config import settings
 from root.shared.http_policy.profiles import HttpProfile
-from root.shared.http_policy.profile_registry import profile_for_url
+from root.shared.http_policy.profile_registry import default_http_profile_registry
 from root.shared.http_policy.proxy import NoProxyProvider
 from root.shared.http_policy.types import ProxyProviderProtocol
 from root.shared.net.timeout import random_delay_in_jitter_range
@@ -24,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def _default_profile_from_settings() -> HttpProfile:
-    # Fallback если хост не в реестре - настройки воркера из env (DOWNLOADER_*).
+    # Fallback если хост не в реестре - настройки воркера из env DOWNLOADER_*
     d = settings.downloader
     return HttpProfile(
         impersonate=d.HTTP_IMPERSONATE,
@@ -37,23 +35,23 @@ def resolve_effective_profile(
     url: str,
     explicit: HttpProfile | None,
 ) -> tuple[HttpProfile, Literal["explicit", "registry", "default"]]:
-    # Явный profile, иначе реестр по URL, иначе дефолт из settings.downloader.
+    # Явный profile - иначе реестр по URL - иначе дефолт из settings.downloader
     if explicit is not None:
         return explicit, "explicit"
-    from_registry = profile_for_url(url)
+    from_registry = default_http_profile_registry.for_url(url)
     if from_registry is not None:
         return from_registry, "registry"
     return _default_profile_from_settings(), "default"
 
 
 async def _sleep_jitter(profile: HttpProfile) -> None:
-    # Случайная задержка в [min, max] из профиля перед GET.
+    # Случайная задержка в min-max из профиля перед GET
     delay = random_delay_in_jitter_range(
         profile.jitter_min_seconds,
         profile.jitter_max_seconds,
     )
     logger.debug(
-        "http_policy jitter: спим %.3fs (profile impersonate=%s)",
+        "http_policy jitter: пауза %.3f с impersonate=%s",
         delay,
         profile.impersonate,
     )
@@ -66,7 +64,7 @@ def _build_get_kwargs(
     headers: dict[str, str] | None,
     proxy_url: str | None,
 ) -> dict[str, Any]:
-    # Аргументы для session.get: allow_redirects, impersonate, опционально headers и proxy.
+    # Аргументы session.get - allow_redirects, impersonate, опционально headers и proxy
     kwargs: dict[str, Any] = {
         "allow_redirects": True,
         "impersonate": impersonate,
@@ -85,10 +83,10 @@ async def fetch_url(
     proxy_provider: ProxyProviderProtocol | None = None,
     profile: HttpProfile | None = None,
 ) -> Response:
-    # Цепочка: effective profile, jitter sleep, proxy, затем session.get.
+    # Цепочка - профиль, jitter, прокси, session.get
     effective, source = resolve_effective_profile(url, profile)
     logger.debug(
-        "http_policy fetch: profile_source=%s impersonate=%s",
+        "http_policy fetch: источник профиля=%s impersonate=%s",
         source,
         effective.impersonate,
     )
@@ -101,7 +99,7 @@ async def fetch_url(
     provider = proxy_provider if proxy_provider is not None else NoProxyProvider()
     proxy_url = await provider.get_proxy()
     if proxy_url:
-        logger.debug("http_policy fetch: Используем прокси для этого запроса")
+        logger.debug("http_policy fetch: для запроса задан прокси")
 
     kwargs = _build_get_kwargs(
         impersonate=impersonate,

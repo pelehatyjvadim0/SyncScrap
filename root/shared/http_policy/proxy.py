@@ -1,4 +1,4 @@
-# Провайдер URL прокси на один запрос. Не мутирует session.proxy - передаёт proxy= в get.
+# Прокси на один запрос - proxy в get, не в session.proxy.
 
 import random
 

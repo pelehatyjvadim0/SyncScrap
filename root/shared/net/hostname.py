@@ -1,21 +1,27 @@
-# Нормализованный hostname из URL: lower, без ведущего www, поддержка URL без схемы.
+# Хост из URL и нормализация строки хоста - одна точка в net.
 
 from urllib.parse import urlparse
 
 
+def normalize_hostname(host: str) -> str:
+    # lower, strip, без ведущего www - ключ для реестров и сравнения
+    key = host.strip().lower()
+    if key.startswith("www."):
+        key = key[4:]
+    return key
+
+
 def get_hostname(url: str) -> str | None:
+    # Hostname из URL - схема опциональна, затем normalize_hostname
     if not isinstance(url, str) or not url:
         return None
     try:
         parsed = urlparse(url)
         if not parsed.scheme:
             parsed = urlparse("http://" + url)
-        host = parsed.hostname
-        if not host:
+        raw = parsed.hostname
+        if not raw:
             return None
-        host = host.lower().strip()
-        if host.startswith("www."):
-            host = host[4:]
-        return host
+        return normalize_hostname(raw)
     except Exception:
         return None

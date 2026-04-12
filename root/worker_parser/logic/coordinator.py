@@ -1,5 +1,6 @@
 import logging
-from urllib.parse import urlparse
+
+from root.shared.net.hostname import get_hostname
 from root.worker_parser.logic.base import BaseParser
 from root.worker_parser.logic.schemas import BaseItemDTO
 from root.worker_parser.logic.strategies.registry import build_strategies
@@ -12,7 +13,10 @@ class ParserCoordinator:
         self._strategies = strategies or build_strategies()
 
     async def run_parser(self, url: str, html: str) -> list[BaseItemDTO]:
-        domain = urlparse(url).netloc.replace("www.", "")
+        domain = get_hostname(url)
+        if domain is None:
+            logger.error(" [!] Не удалось извлечь hostname из URL: %s", url)
+            raise ValueError(f"Некорректный URL: {url}")
 
         strategy = self._strategies.get(domain)
 
