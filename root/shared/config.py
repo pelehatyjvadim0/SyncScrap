@@ -69,13 +69,15 @@ class RedisSettings(BaseSettings):
 
 
 class DownloaderSettings(BaseSettings):
-    MAX_RETRIES: int = 3
-    BASE_DELAY_SECONDS: float = 0.5
-    HTML_EXPIRE_SECONDS: int = 600
-    # HTTP-клиент (curl_cffi): TLS/HTTP2 fingerprint как у браузера, таймауты, пул curl.
-    HTTP_IMPERSONATE: str = "chrome131"
-    HTTP_TIMEOUT_SECONDS: float = 60.0
-    HTTP_MAX_CLIENTS: int = 10
+    # Env: DOWNLOADER_* см. .env.example
+    MAX_RETRIES: int = 3  # число попыток загрузки URL при сетевых/5xx ошибках
+    BASE_DELAY_SECONDS: float = 0.5  # база экспоненциальной задержки между ретраями в downloader
+    HTML_EXPIRE_SECONDS: int = 600  # TTL HTML в Redis в секундах
+    HTTP_IMPERSONATE: str = "chrome131"  # дефолтный браузерный fingerprint curl_cffi если нет профиля в реестре
+    HTTP_TIMEOUT_SECONDS: float = 60.05  # таймаут ожидания ответа curl на уровне сессии, не jitter
+    HTTP_JITTER_TIMEOUT_MIN_SECONDS: float = 0.5  # нижняя граница случайной паузы перед GET в http_policy
+    HTTP_JITTER_TIMEOUT_MAX_SECONDS: float = 1.5  # верхняя граница той же паузы (антиспам по времени)
+    HTTP_MAX_CLIENTS: int = 10  # размер пула curl в AsyncSession
 
     model_config = SettingsConfigDict(
         env_prefix="DOWNLOADER_", env_file=".env", extra="ignore"

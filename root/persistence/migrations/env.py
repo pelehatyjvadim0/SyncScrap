@@ -5,7 +5,7 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-import root.persistence.models.books  # noqa: F401 — регистрация таблицы в metadata
+import root.persistence.models.listing  # noqa: F401 — регистрация таблицы в metadata
 import root.persistence.models.target  # noqa: F401
 
 from root.persistence.models.base import BaseModel

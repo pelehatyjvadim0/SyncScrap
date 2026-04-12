@@ -4,11 +4,11 @@ import logging
 from pydantic import HttpUrl, ValidationError
 
 from root.persistence.connection import sessionmaker
-from root.persistence.dao.books import BooksDAO
+from root.persistence.dao.listing import ListingDAO
 from root.persistence.dao.target_url import TargetUrlDAO
 from root.shared.queues import EXTRACTED_DATA
 from root.shared.rabbitmq import broker, faststream_app
-from root.shared.schemas.book import SBookBase
+from root.shared.schemas.listing import ListingRecord
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,32 +38,32 @@ async def handle_db(msg) -> None:
     items = payload.get("items") or []
     if not items:
         logger.info(
-            " [DB] Пустой items для %s — только last_scraped_at (страница без товаров)",
+            " [DB] Пустой items для %s - только last_scraped_at (страница без позиций)",
             canonical_url,
         )
 
     async with sessionmaker() as session:
         try:
             for item in items:
-                model = SBookBase(**item)
-                book_data = model.model_dump(mode="json")
-                book_data["extra"] = {
+                model = ListingRecord(**item)
+                listing_data = model.model_dump(mode="json")
+                listing_data["extra"] = {
                     "image_url": item.get("image_url"),
                     "availability": item.get("availability"),
                     "source_page": canonical_url,
                 }
-                await BooksDAO.upsert_book(session, book_data)
+                await ListingDAO.upsert_listing(session, listing_data)
 
             await TargetUrlDAO.mark_urls_scraped(session, [canonical_url])
             await session.commit()
             logger.info(
-                " [DB] OK url=%s книг=%s last_scraped_at обновлён",
+                " [DB] OK url=%s позиций=%s last_scraped_at обновлён",
                 canonical_url,
                 len(items),
             )
         except ValidationError as exc:
             await session.rollback()
-            logger.error(" [DB] Ошибка валидации книги: %s", exc)
+            logger.error(" [DB] Ошибка валидации записи: %s", exc)
             raise
         except Exception:
             await session.rollback()

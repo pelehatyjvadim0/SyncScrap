@@ -1,24 +1,17 @@
 from __future__ import annotations
 
-from typing import cast
-
 from curl_cffi.requests import AsyncSession
-from curl_cffi.requests.impersonate import BrowserTypeLiteral
 
 from root.shared.config import settings
+from root.shared.http_policy.session import HTTPSessionFactory
 from root.shared.redis_client import RedisManager
 
 
 def build_scrape_async_session() -> AsyncSession:
     """Один экземпляр AsyncSession для загрузки HTML: impersonate, таймауты, редиректы."""
-    d = settings.downloader
-    return AsyncSession(
-        max_clients=d.HTTP_MAX_CLIENTS,
-        impersonate=cast(BrowserTypeLiteral | None, d.HTTP_IMPERSONATE),
-        timeout=d.HTTP_TIMEOUT_SECONDS,
-        allow_redirects=True,
-        verify=True,
-        trust_env=True,
+    return HTTPSessionFactory().build(
+        downloader_settings=settings.downloader,
+        profile=None,
     )
 
 

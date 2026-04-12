@@ -5,15 +5,17 @@ from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from root.persistence.models.books import Books
+from root.persistence.models.listing import Listing
 
 logger = logging.getLogger(__name__)
 
 
-class BooksDAO:
+class ListingDAO:
     @classmethod
-    async def upsert_book(cls, session: AsyncSession, book_data: dict[str, Any]) -> int | None:
-        stmt = insert(Books).values(**book_data)
+    async def upsert_listing(
+        cls, session: AsyncSession, listing_data: dict[str, Any]
+    ) -> int | None:
+        stmt = insert(Listing).values(**listing_data)
         stmt = stmt.on_conflict_do_update(
             index_elements=["url"],
             set_={
@@ -23,13 +25,13 @@ class BooksDAO:
                 "extra": stmt.excluded.extra,
                 "updated_at": func.now(),
             },
-        ).returning(Books.id)
+        ).returning(Listing.id)
 
         result = await session.execute(stmt)
-        book_id = result.scalar_one_or_none()
+        row_id = result.scalar_one_or_none()
         logger.debug(
-            " [DB] upsert books: url=%s id=%s",
-            book_data.get("url"),
-            book_id,
+            " [DB] upsert listings: url=%s id=%s",
+            listing_data.get("url"),
+            row_id,
         )
-        return book_id
+        return row_id

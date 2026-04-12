@@ -4,8 +4,7 @@ from typing import Annotated, Any
 from pydantic import BaseModel, BeforeValidator, HttpUrl
 
 
-def _coerce_book_price(v: Any) -> float:
-   
+def _coerce_price(v: Any) -> float:
     if isinstance(v, bool):
         raise ValueError("price must be numeric")
     if isinstance(v, (int, float)):
@@ -17,8 +16,10 @@ def _coerce_book_price(v: Any) -> float:
     raise TypeError(f"unsupported price type: {type(v)}")
 
 
-class SBookBase(BaseModel):
+class ListingRecord(BaseModel):
+    """Общая форма записи для сохранения в БД; доменные поля кладём в `extra` в worker_db."""
+
     title: str
-    price: Annotated[float, BeforeValidator(_coerce_book_price)]
+    price: Annotated[float, BeforeValidator(_coerce_price)]
     currency: str
     url: HttpUrl

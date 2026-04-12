@@ -5,6 +5,8 @@ import httpx
 from curl_cffi.requests import AsyncSession
 from curl_cffi.requests import exceptions as cffi_req_exc
 
+from root.shared.http_policy.request import fetch_url
+from root.shared.http_policy.types import ProxyProviderProtocol
 from root.worker_downloader.logic.retry_policy import get_retry_delay, should_retry
 from root.worker_downloader.logic.schemas import StorageProtocol
 
@@ -107,10 +109,16 @@ class DownloaderLogic:
         url: str,
         max_retries: int = 3,
         base_delay_seconds: float = 0.5,
+        *,
+        proxy_provider: ProxyProviderProtocol | None = None,
     ) -> str:
         for attempt in range(1, max_retries + 1):
             try:
-                response = await http_client.get(url, allow_redirects=True)
+                response = await fetch_url(
+                    http_client,
+                    url,
+                    proxy_provider=proxy_provider,
+                )
                 response.raise_for_status()
 
                 html = response.text
