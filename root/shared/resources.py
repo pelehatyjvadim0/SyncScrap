@@ -1,38 +1,57 @@
-from httpx import AsyncClient
-import httpx
+from __future__ import annotations
+
+from typing import cast
+
+from curl_cffi.requests import AsyncSession
+from curl_cffi.requests.impersonate import BrowserTypeLiteral
+
+from root.shared.config import settings
 from root.shared.redis_client import RedisManager
 
 
+def build_scrape_async_session() -> AsyncSession:
+    """Один экземпляр AsyncSession для загрузки HTML: impersonate, таймауты, редиректы."""
+    d = settings.downloader
+    return AsyncSession(
+        max_clients=d.HTTP_MAX_CLIENTS,
+        impersonate=cast(BrowserTypeLiteral | None, d.HTTP_IMPERSONATE),
+        timeout=d.HTTP_TIMEOUT_SECONDS,
+        allow_redirects=True,
+        verify=True,
+        trust_env=True,
+    )
+
+
 class Resources:
-    # Глобальный контейнер для тяжёлых ресурсов
-    def __init__(self):
-        self.http_client: AsyncClient | None = None
+    def __init__(self) -> None:
+        self.http_client: AsyncSession | None = None
         self.storage: RedisManager | None = None
 
-    async def init_all(self):
+    async def init_all(self) -> None:
         if self.http_client is None:
-            self.http_client = AsyncClient(
-                limits=httpx.Limits(max_connections=50),
-                timeout=httpx.Timeout(20.0, connect=15.0),
-            )
+            self.http_client = build_scrape_async_session()
         if self.storage is None:
             self.storage = RedisManager()
             await self.storage.connect()
 
-    async def close_all(self):
-        if self.http_client:
-            await self.http_client.aclose()
-        if self.storage:
+    async def close_all(self) -> None:
+        if self.http_client is not None:
+            await self.http_client.close()
+            self.http_client = None
+        if self.storage is not None:
             await self.storage.close()
+            self.storage = None
 
-    async def get_http_client(self):
+    async def get_http_client(self) -> AsyncSession:
         if self.http_client is None:
             await self.init_all()
+        assert self.http_client is not None
         return self.http_client
 
-    async def get_storage(self):
+    async def get_storage(self) -> RedisManager:
         if self.storage is None:
             await self.init_all()
+        assert self.storage is not None
         return self.storage
 
 

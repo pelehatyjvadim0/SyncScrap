@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from httpx import AsyncClient
+from curl_cffi.requests import AsyncSession
 
 from root.shared.config import settings
 from root.shared.rabbitmq import broker
@@ -31,7 +31,7 @@ def _use_redis_cache(message: RawUrlMessage, cached_html: str | None) -> bool:
 class DownloadWorkflow:
     """Один проход: распарсить сообщение → HTML в Redis → очередь downloaded_pages."""
 
-    def __init__(self, http_client: AsyncClient, storage: RedisManager) -> None:
+    def __init__(self, http_client: AsyncSession, storage: RedisManager) -> None:
         self._http = http_client
         self._storage = storage
 

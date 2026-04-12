@@ -72,6 +72,10 @@ class DownloaderSettings(BaseSettings):
     MAX_RETRIES: int = 3
     BASE_DELAY_SECONDS: float = 0.5
     HTML_EXPIRE_SECONDS: int = 600
+    # HTTP-клиент (curl_cffi): TLS/HTTP2 fingerprint как у браузера, таймауты, пул curl.
+    HTTP_IMPERSONATE: str = "chrome131"
+    HTTP_TIMEOUT_SECONDS: float = 60.0
+    HTTP_MAX_CLIENTS: int = 10
 
     model_config = SettingsConfigDict(
         env_prefix="DOWNLOADER_", env_file=".env", extra="ignore"

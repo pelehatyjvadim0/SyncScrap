@@ -1,4 +1,5 @@
 faststream[rabbit, cli]
+curl_cffi
 httpx
 pydantic-settings
 redis

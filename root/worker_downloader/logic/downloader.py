@@ -1,7 +1,10 @@
-from httpx import AsyncClient
 import asyncio
 import logging
+
 import httpx
+from curl_cffi.requests import AsyncSession
+from curl_cffi.requests import exceptions as cffi_req_exc
+
 from root.worker_downloader.logic.retry_policy import get_retry_delay, should_retry
 from root.worker_downloader.logic.schemas import StorageProtocol
 
@@ -23,7 +26,16 @@ class DownloaderLogic:
             max_retries=max_retries,
         )
 
-        if isinstance(exc, (httpx.ConnectError, httpx.ConnectTimeout)):
+        if isinstance(
+            exc,
+            (
+                httpx.ConnectError,
+                httpx.ConnectTimeout,
+                cffi_req_exc.ConnectionError,
+                cffi_req_exc.ConnectTimeout,
+                cffi_req_exc.DNSError,
+            ),
+        ):
             if not is_retry_allowed:
                 logger.error(
                     " [x] Сетевая ошибка после %s попыток. url=%s ошибка=%s",
@@ -45,7 +57,7 @@ class DownloaderLogic:
             await asyncio.sleep(delay)
             return
 
-        if isinstance(exc, httpx.HTTPStatusError):
+        if isinstance(exc, (httpx.HTTPStatusError, cffi_req_exc.HTTPError)):
             status_code = exc.response.status_code
 
             # Для 4xx повтор обычно бессмысленен: ошибка запроса/ресурса.
@@ -91,14 +103,14 @@ class DownloaderLogic:
 
     @staticmethod
     async def download_url(
-        http_client: AsyncClient,
+        http_client: AsyncSession,
         url: str,
         max_retries: int = 3,
         base_delay_seconds: float = 0.5,
     ) -> str:
         for attempt in range(1, max_retries + 1):
             try:
-                response = await http_client.get(url, follow_redirects=True)
+                response = await http_client.get(url, allow_redirects=True)
                 response.raise_for_status()
 
                 html = response.text

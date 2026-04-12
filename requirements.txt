@@ -13,6 +13,7 @@ psycopg2-binary
 alembic
 
 # Скрапинг и Утилиты
+curl_cffi
 httpx
 beautifulsoup4
 aiofiles
