@@ -1,0 +1,17 @@
+# Настройки coverage.py - только пакет root, без ветвлений для стабильных процентов.
+
+[run]
+source = root
+branch = false
+omit =
+    */__main__.py
+
+[report]
+precision = 1
+skip_empty = true
+show_missing = true
+sort = Cover
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    if typing.TYPE_CHECKING:

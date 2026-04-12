@@ -22,3 +22,4 @@ redis
 
 # Тесты
 pytest
+pytest-cov

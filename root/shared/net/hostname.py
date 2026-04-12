@@ -22,6 +22,9 @@ def get_hostname(url: str) -> str | None:
         raw = parsed.hostname
         if not raw:
             return None
-        return normalize_hostname(raw)
+        result = normalize_hostname(raw)
+        if not result:
+            return None
+        return result
     except Exception:
         return None
