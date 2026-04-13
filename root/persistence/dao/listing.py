@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from sqlalchemy import func
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,3 +35,10 @@ class ListingDAO:
             row_id,
         )
         return row_id
+
+    @classmethod
+    async def get_listing(cls, session: AsyncSession, limit: int):
+        stmt = select(Listing).limit(limit)
+        result = await session.execute(stmt)
+
+        return result.scalars().all()

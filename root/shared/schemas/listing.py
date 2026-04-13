@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Annotated, Any
 
-from pydantic import BaseModel, BeforeValidator, HttpUrl
+from pydantic import BaseModel, BeforeValidator, HttpUrl, ConfigDict
 
 
 def _coerce_price(v: Any) -> float:
@@ -23,3 +23,5 @@ class ListingRecord(BaseModel):
     price: Annotated[float, BeforeValidator(_coerce_price)]
     currency: str
     url: HttpUrl
+
+    model_config = ConfigDict(from_attributes=True)

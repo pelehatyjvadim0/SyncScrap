@@ -88,7 +88,7 @@ class SchedulerSettings(BaseSettings):
     """Периодическая отправка целей из БД в raw_urls."""
 
     ENABLED: bool = True
-    INTERVAL_SECONDS: int = 80
+    INTERVAL_SECONDS: int = 18000 # 5 часов для теста
     """Интервал между тиками планировщика."""
     STALE_AFTER_SECONDS: int = 3600
     """Считать URL «устаревшим», если last_scraped_at старше N секунд (UTC)."""
