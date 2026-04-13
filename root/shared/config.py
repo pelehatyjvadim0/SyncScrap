@@ -4,11 +4,11 @@ from urllib.parse import quote_plus
 
 
 class DB_Settings(BaseSettings):
-    USER: str = "postgres"
-    PASSWORD: str = "postgres"
+    USER: str = "user"
+    PASSWORD: str = "user"
     PORT: int = 5432
-    NAME: str = "user_db"
-    HOST: str = "localhost"
+    NAME: str = "syncscrap_db"
+    HOST: str = "postgres"
     POOL_SIZE: int = 10
     MAX_OVERFLOW: int = 20
     POOL_PRE_PING: bool = True
@@ -25,7 +25,7 @@ class DB_Settings(BaseSettings):
 class RabbitMq_Settings(BaseSettings):
     USER: str = "guest"
     PASS: str = "guest"
-    HOST: str = "localhost"
+    HOST: str = "rabbitmq"
     PORT: int = 5672
 
     @property
@@ -43,7 +43,7 @@ class RedisSettings(BaseSettings):
     CONNECTION_URL: str | None = None
     USERNAME: str = ""
     PASSWORD: str = ""
-    HOST: str = "localhost"
+    HOST: str = "redis"
     PORT: int = 6379
 
     @property
