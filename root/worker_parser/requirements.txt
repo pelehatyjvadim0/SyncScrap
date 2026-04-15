@@ -1,9 +1,0 @@
-faststream[rabbit, cli]
-selectolax
-pydantic-settings
-redis
-curl_cffi
-httpx
-fastapi
-sqlalchemy[asyncio]
-asyncpg

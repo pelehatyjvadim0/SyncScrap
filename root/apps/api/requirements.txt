@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+sqlalchemy[asyncio]
+asyncpg
+faststream[rabbit]
+redis
+curl_cffi
+httpx
+qdrant-client
+sentence-transformers

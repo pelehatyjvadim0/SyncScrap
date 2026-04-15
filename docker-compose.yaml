@@ -1,9 +1,7 @@
-# Запуск: docker compose up -d --build
-# Переменные БД/брокера подставляются из .env рядом с этим файлом.
-# Для сервисов в Docker хосты заданы в environment (postgres / rabbitmq / redis).
+# Запуск из корня репозра: docker compose up -d --build
+# См. также root/infra/README.md - описание слоёв и соответствие каталогов.
 
 services:
-  # --- Инфраструктура (сначала поднимаются и становятся healthy) ---
   postgres:
     image: postgres:15-alpine
     container_name: scraping_db
@@ -65,11 +63,10 @@ services:
       retries: 12
       start_period: 20s
 
-  # --- API ---
   api:
     build:
       context: .
-      dockerfile: root/api/Dockerfile
+      dockerfile: root/apps/api/Dockerfile
     container_name: scraping_api
     restart: unless-stopped
     ports:
@@ -88,16 +85,14 @@ services:
       DB_HOST: postgres
       RABBITMQ_HOST: rabbitmq
       REDIS_HOST: redis
-      # Образ redis без ACL - явный URL, чтобы не подтянулись старые REDIS_USERNAME из окружения хоста
       REDIS_CONNECTION_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
-
     volumes:
       - .:/app
     command:
       [
         "uvicorn",
-        "root.api.main:app",
+        "root.apps.api.main:app",
         "--host",
         "0.0.0.0",
         "--port",
@@ -105,29 +100,10 @@ services:
         "--reload",
       ]
 
-  # --- Воркеры ---
-  downloader:
+  hunter:
     build:
       context: .
-      dockerfile: root/worker_downloader/Dockerfile
-    container_name: worker_downloader
-    restart: unless-stopped
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    env_file: .env
-    environment:
-      DB_HOST: postgres
-      RABBITMQ_HOST: rabbitmq
-      REDIS_HOST: redis
-      REDIS_CONNECTION_URL: redis://redis:6379/0
-
-  playwright:
-    build:
-      context: .
-      dockerfile: root/worker_playwright/Dockerfile
+      dockerfile: root/apps/workers/hunter_playwright/Dockerfile
     container_name: worker_playwright
     restart: unless-stopped
     depends_on:
@@ -141,44 +117,10 @@ services:
       REDIS_HOST: redis
       REDIS_CONNECTION_URL: redis://redis:6379/0
 
-  parser:
-    build:
-      context: .
-      dockerfile: root/worker_parser/Dockerfile
-    container_name: worker_parser
-    restart: unless-stopped
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    env_file: .env
-    environment:
-      DB_HOST: postgres
-      RABBITMQ_HOST: rabbitmq
-      REDIS_HOST: redis
-      REDIS_CONNECTION_URL: redis://redis:6379/0
-
-  db_worker:
-    build:
-      context: .
-      dockerfile: root/worker_db/Dockerfile
-    container_name: worker_db
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    env_file: .env
-    environment:
-      DB_HOST: postgres
-      RABBITMQ_HOST: rabbitmq
-
   scheduler:
     build:
       context: .
-      dockerfile: root/worker_scheduler/Dockerfile
+      dockerfile: root/apps/workers/scheduler/Dockerfile
     container_name: worker_scheduler
     restart: unless-stopped
     depends_on:
@@ -200,12 +142,12 @@ services:
             if [ "$$i" -gt 90 ]; then echo "DNS: postgres/rabbitmq not resolvable"; exit 1; fi
             sleep 1
           done
-          alembic -c root/persistence/alembic.ini upgrade head && exec faststream run root.worker_scheduler.main:faststream_app
+          alembic -c root/persistence/alembic.ini upgrade head && exec faststream run root.apps.workers.scheduler.main:faststream_app
 
   scout:
     build:
       context: .
-      dockerfile: root/worker_scout/Dockerfile
+      dockerfile: root/apps/workers/scout/Dockerfile
     container_name: worker_scout
     restart: unless-stopped
     depends_on:
@@ -218,7 +160,7 @@ services:
   delta:
     build:
       context: .
-      dockerfile: root/worker_delta/Dockerfile
+      dockerfile: root/apps/workers/delta/Dockerfile
     container_name: worker_delta
     restart: unless-stopped
     depends_on:
@@ -234,7 +176,7 @@ services:
   normalize:
     build:
       context: .
-      dockerfile: root/worker_normalize/Dockerfile
+      dockerfile: root/apps/workers/normalize/Dockerfile
     container_name: worker_normalize
     restart: unless-stopped
     depends_on:
@@ -254,7 +196,7 @@ services:
   embedding:
     build:
       context: .
-      dockerfile: root/worker_embedding/Dockerfile
+      dockerfile: root/apps/workers/embedding/Dockerfile
     container_name: worker_embedding
     restart: unless-stopped
     depends_on:
@@ -273,7 +215,7 @@ services:
   observability:
     build:
       context: .
-      dockerfile: root/worker_observability/Dockerfile
+      dockerfile: root/apps/workers/observability/Dockerfile
     container_name: worker_observability
     restart: unless-stopped
     depends_on:

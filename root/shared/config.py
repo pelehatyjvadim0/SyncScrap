@@ -121,7 +121,7 @@ class QdrantSettings(BaseSettings):
     URL: str = "http://localhost:6333"
     API_KEY: str | None = None
     COLLECTION_NAME: str = "listings_mvp"
-    VECTOR_SIZE: int = 64
+    VECTOR_SIZE: int = 384
 
     model_config = SettingsConfigDict(
         env_prefix="QDRANT_", env_file=".env", extra="ignore"
@@ -129,7 +129,7 @@ class QdrantSettings(BaseSettings):
 
 
 class EmbeddingSettings(BaseSettings):
-    MODEL_NAME: str = "hash64-mvp"
+    MODEL_NAME: str = "all-MiniLM-L6-v2"
     BATCH_SIZE: int = 32
 
     model_config = SettingsConfigDict(
