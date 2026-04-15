@@ -52,6 +52,19 @@ services:
       retries: 8
       start_period: 5s
 
+  qdrant:
+    image: qdrant/qdrant:v1.13.2
+    container_name: scraping_qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
   # --- API ---
   api:
     build:
@@ -68,6 +81,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      qdrant:
+        condition: service_healthy
     env_file: .env
     environment:
       DB_HOST: postgres
@@ -75,6 +90,7 @@ services:
       REDIS_HOST: redis
       # Образ redis без ACL - явный URL, чтобы не подтянулись старые REDIS_USERNAME из окружения хоста
       REDIS_CONNECTION_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
 
     volumes:
       - .:/app
@@ -104,6 +120,23 @@ services:
     env_file: .env
     environment:
       DB_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
+      REDIS_HOST: redis
+      REDIS_CONNECTION_URL: redis://redis:6379/0
+
+  playwright:
+    build:
+      context: .
+      dockerfile: root/worker_playwright/Dockerfile
+    container_name: worker_playwright
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: .env
+    environment:
       RABBITMQ_HOST: rabbitmq
       REDIS_HOST: redis
       REDIS_CONNECTION_URL: redis://redis:6379/0
@@ -168,3 +201,87 @@ services:
             sleep 1
           done
           alembic -c root/persistence/alembic.ini upgrade head && exec faststream run root.worker_scheduler.main:faststream_app
+
+  scout:
+    build:
+      context: .
+      dockerfile: root/worker_scout/Dockerfile
+    container_name: worker_scout
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      RABBITMQ_HOST: rabbitmq
+
+  delta:
+    build:
+      context: .
+      dockerfile: root/worker_delta/Dockerfile
+    container_name: worker_delta
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      DB_HOST: postgres
+
+  normalize:
+    build:
+      context: .
+      dockerfile: root/worker_normalize/Dockerfile
+    container_name: worker_normalize
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      REDIS_HOST: redis
+      REDIS_CONNECTION_URL: redis://redis:6379/0
+      DB_HOST: postgres
+
+  embedding:
+    build:
+      context: .
+      dockerfile: root/worker_embedding/Dockerfile
+    container_name: worker_embedding
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      DB_HOST: postgres
+      QDRANT_URL: http://qdrant:6333
+
+  observability:
+    build:
+      context: .
+      dockerfile: root/worker_observability/Dockerfile
+    container_name: worker_observability
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      DB_HOST: postgres

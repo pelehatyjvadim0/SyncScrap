@@ -17,8 +17,10 @@ curl_cffi
 httpx
 beautifulsoup4
 aiofiles
+playwright>=1.40.0
 
 redis 
+qdrant-client
 
 # Тесты
 pytest

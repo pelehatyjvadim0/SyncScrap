@@ -41,14 +41,13 @@ class SchedulerTickRunner:
 
         logger.info(" [⏰] Тик планировщика: к отправке выбрано URL=%s", len(urls))
 
-        sent = await URLSpawner.append_urls_in_queue(
+        sent = await URLSpawner.append_discovery_tasks(
             urls,
-            force_refresh=settings.scheduler.FORCE_REFRESH,
-            publish_gap_seconds=settings.scheduler.PUBLISH_GAP_SECONDS,
+            source="avito",
         )
 
         if not sent:
-            logger.warning(" [⏰] В raw_urls ничего не ушло")
+            logger.warning(" [⏰] В discovery_urls ничего не ушло")
             return
 
-        logger.info(" [⏰] Опубликовано в raw_urls: %s", len(sent))
+        logger.info(" [⏰] Опубликовано в discovery_urls: %s", len(sent))
