@@ -23,6 +23,9 @@ redis
 qdrant-client
 sentence-transformers
 
+# MCP (stdio серверы в root/mcp_servers/)
+mcp
+
 # Тесты
 pytest
 pytest-cov

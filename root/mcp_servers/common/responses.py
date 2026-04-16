@@ -3,7 +3,7 @@ from typing import Any
 
 import mcp.types as types
 
-from root.mcp_servers.mcp_custom.payloads import build_error_payload, build_success_payload
+from root.mcp_servers.common.payloads import build_error_payload, build_success_payload
 
 
 def to_text_content(payload: dict[str, Any] | Any) -> list[types.TextContent]:

@@ -22,7 +22,7 @@ _encoder = VectorEncoder()
 
 @faststream_app.after_startup
 async def _startup() -> None:
-    _qdrant.ensure_collection()
+    await _qdrant.ensure_collection()
     logger.info(" [Embedding] worker started")
 
 
@@ -35,7 +35,7 @@ async def handle_embedding(msg) -> None:
     try:
         vector = _encoder.encode(task.text)
         point_id = f"{task.idempotency_key}:v{task.version}"
-        _qdrant.upsert(
+        await _qdrant.upsert(
             point_id=point_id,
             vector=vector,
             payload={"listing_id": task.listing_id, "idempotency_key": task.idempotency_key, **task.metadata},

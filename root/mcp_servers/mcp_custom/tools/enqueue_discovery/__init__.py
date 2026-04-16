@@ -3,7 +3,7 @@ from uuid import uuid4
 from pydantic import ValidationError
 
 from root.contracts.v1.pipeline_messages import DiscoveryTask
-from root.mcp_servers.mcp_custom.payloads import build_error_payload
+from root.mcp_servers.common.payloads import build_error_payload
 from root.shared.observability import metrics
 from root.shared.queues import DISCOVERY_URLS
 from root.shared.redis_client import redis_manager

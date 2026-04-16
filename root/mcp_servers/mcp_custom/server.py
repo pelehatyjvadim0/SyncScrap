@@ -1,21 +1,21 @@
 import asyncio
 import logging
 
+import mcp.types as types
 from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 from mcp.server.stdio import stdio_server
 from pydantic import ValidationError
 
-import mcp.types as types
-
-from root.mcp_servers.mcp_custom.errors import EXECUTION_FAILED, INVALID_PARAMS, TOOL_NOT_FOUND
-from root.mcp_servers.mcp_custom.payloads import build_error_payload, build_success_payload
-from root.mcp_servers.mcp_custom.registry import TOOLS_REGISTRY
-from root.mcp_servers.mcp_custom.responses import to_text_content
+from root.mcp_servers.common.errors import EXECUTION_FAILED, INVALID_PARAMS, TOOL_NOT_FOUND
+from root.mcp_servers.common.payloads import build_error_payload, build_success_payload
+from root.mcp_servers.common.responses import to_text_content
+from root.mcp_servers.mcp_custom.registry import MCPTool, TOOLS_REGISTRY
 from root.shared.rabbitmq import broker
 from root.shared.redis_client import redis_manager
 
 logger = logging.getLogger(__name__)
+
 
 class MCPCustomApp:
     def __init__(self):
@@ -24,7 +24,6 @@ class MCPCustomApp:
         self._setup_handlers()
 
     def _setup_handlers(self):
-        # Регистрация обработчиков сервера
         self.server.list_tools()(self.handle_list_tools)
         self.server.call_tool()(self.handle_call_tool)
 
@@ -34,7 +33,8 @@ class MCPCustomApp:
                 name=t.name,
                 description=t.description,
                 inputSchema=t.input_model.model_json_schema(),
-            ) for t in self.registry.values()
+            )
+            for t in self.registry.values()
         ]
 
     async def handle_call_tool(self, name: str, arguments: dict | None):
@@ -64,7 +64,6 @@ class MCPCustomApp:
             return to_text_content(build_error_payload(EXECUTION_FAILED, str(e), retryable=False))
 
     async def run(self):
-        # Главный цикл жизни приложения
         logger.info(" [🚀] Установка соединения с Redis...")
         await redis_manager.connect()
         logger.info(" [✅] Соединение с Redis установлено")
@@ -81,7 +80,7 @@ class MCPCustomApp:
                     InitializationOptions(
                         server_name="mcp_custom_server",
                         server_version="0.1.0",
-                        capabilities= self.server.get_capabilities(
+                        capabilities=self.server.get_capabilities(
                             notification_options=NotificationOptions(),
                             experimental_capabilities={},
                         ),
@@ -91,6 +90,7 @@ class MCPCustomApp:
             logger.info(" [🏁] Завершение работы MCP Custom Server | Соединение с RabbitMQ и Redis закрыто")
             await broker.close()
             await redis_manager.close()
+
 
 if __name__ == "__main__":
     app = MCPCustomApp()
