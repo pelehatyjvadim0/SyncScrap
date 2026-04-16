@@ -3,7 +3,6 @@ from uuid import uuid4
 from pydantic import ValidationError
 
 from root.contracts.v1.pipeline_messages import DiscoveryTask
-from root.mcp_servers.common.payloads import build_error_payload
 from root.shared.observability import metrics
 from root.shared.queues import DISCOVERY_URLS
 from root.shared.redis_client import redis_manager
@@ -20,6 +19,26 @@ from .schemas import (
     ErrorResponse,
     SuccessResponse,
 )
+
+
+def _error_response(
+    *,
+    error_code: str,
+    message: str,
+    details: object,
+    trace_id: str,
+    idempotency_key: str | None,
+    retryable: bool,
+) -> ErrorResponse:
+    return {
+        "ok": False,
+        "error_code": error_code,
+        "message": message,
+        "details": details,
+        "trace_id": trace_id,
+        "idempotency_key": idempotency_key,
+        "retryable": retryable,
+    }
 
 
 # Публичный MCP-инструмент - валидирует вход, ограничивает частоту, дедуплицирует и публикует задачу.
@@ -47,7 +66,7 @@ async def enqueue_discovery_tool(
     with metrics.timer("mcp.custom.enqueue_discovery.latency_ms"):
         if not rate_limiter.allow():
             metrics.inc("mcp.custom.enqueue_discovery.rate_limited")
-            return build_error_payload(
+            return _error_response(
                 error_code="rate_limited",
                 message="Превышен лимит запросов для enqueue_discovery_tool",
                 details={
@@ -63,7 +82,7 @@ async def enqueue_discovery_tool(
             validated_input = EnqueueDiscoveryInput.model_validate(payload)
         except ValidationError as exc:
             metrics.inc("mcp.custom.enqueue_discovery.validation_error")
-            return build_error_payload(
+            return _error_response(
                 error_code="validation_error",
                 message="Некорректные входные данные enqueue_discovery",
                 details=exc.errors(),
@@ -76,7 +95,7 @@ async def enqueue_discovery_tool(
             task = DiscoveryTask.model_validate(validated_input.model_dump(exclude={"trace_id", "idempotency_key"}))
         except ValidationError as exc:
             metrics.inc("mcp.custom.enqueue_discovery.validation_error")
-            return build_error_payload(
+            return _error_response(
                 error_code="validation_error",
                 message="Ошибка валидации DiscoveryTask",
                 details=exc.errors(),
@@ -101,7 +120,7 @@ async def enqueue_discovery_tool(
             await publish_discovery_task(task=task, timeout_seconds=PUBLISH_TIMEOUT_SECONDS)
         except PublishError as exc:
             metrics.inc("mcp.custom.enqueue_discovery.fail")
-            return build_error_payload(
+            return _error_response(
                 error_code="broker_publish_failed",
                 message="Не удалось опубликовать DiscoveryTask в брокер",
                 details=str(exc),

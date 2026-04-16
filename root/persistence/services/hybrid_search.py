@@ -8,12 +8,28 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from root.persistence.relational_store.models.listing_version import ListingVersion
 from root.persistence.services.rerank import CrossEncoderReranker
-from root.persistence.vector_store import QdrantAdapter, VectorEncoder
+from root.persistence.vector_store.adapter import QdrantAdapter
+from root.persistence.vector_store.encoder import VectorEncoder
 
 
 class HybridSearchService:
-    _qdrant = QdrantAdapter()
-    _encoder = VectorEncoder()
+    _qdrant: QdrantAdapter | None = None
+    _encoder: VectorEncoder | None = None
+    _init_lock = asyncio.Lock()
+
+    @classmethod
+    async def initialize(cls) -> None:
+        # Инициализация тяжелых зависимостей делается на старте сервера.
+        async with cls._init_lock:
+            if cls._encoder is None:
+                loop = asyncio.get_running_loop()
+                cls._encoder = await loop.run_in_executor(None, VectorEncoder)
+            if cls._qdrant is None:
+                encoder = cls._encoder
+                if encoder is None:
+                    raise RuntimeError("VectorEncoder не инициализирован")
+                cls._qdrant = QdrantAdapter(vector_size=encoder.vector_size)
+                await cls._qdrant.ensure_collection()
 
     @classmethod
     async def search(
@@ -43,6 +59,11 @@ class HybridSearchService:
             if row.idempotency_key not in latest_by_key: # добавляем только последнюю версию для каждого idempotency_key
                 latest_by_key[row.idempotency_key] = row
         sql_candidates = list(latest_by_key.values())
+
+        if cls._encoder is None or cls._qdrant is None:
+            await cls.initialize()
+        if cls._encoder is None or cls._qdrant is None:
+            raise RuntimeError("Не удалось инициализировать VectorEncoder или QdrantAdapter")
 
         loop = asyncio.get_running_loop()
         query_vector = await loop.run_in_executor(None, cls._encoder.encode, query)

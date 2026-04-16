@@ -1,6 +1,6 @@
 from root.apps.api.v1.services.guardrail import LocalGuardrail
-from root.apps.api.v1.services.hybrid_search import HybridSearchService
 from root.contracts.v1.pipeline_messages import RetrievalQuery
+from root.persistence.services.hybrid_search import HybridSearchService
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

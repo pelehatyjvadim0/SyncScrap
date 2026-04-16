@@ -1,15 +1,20 @@
+import asyncio
+import logging
 from typing import Any
 
 from sqlalchemy import and_, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from root.persistence.models.listing_version import ListingVersion
-from root.persistence.relational_store import sessionmaker
+from root.persistence.relational_store.connection import sessionmaker
+from root.persistence.relational_store.models.listing_version import ListingVersion
 from root.shared.observability import metrics
 
 from .schemas import ListListingsInput
 
 __all__ = ["list_listings_tool", "ListListingsInput"]
+
+logger = logging.getLogger(__name__)
+POSTGRES_TIMEOUT_SECONDS = 5.0
 
 
 async def _fetch_listings(
@@ -58,9 +63,15 @@ async def list_listings_tool(
     with metrics.timer("mcp.db.list_listings.latency_ms"):
         metrics.inc("mcp.db.list_listings.calls")
         try:
-            async with sessionmaker() as session:
-                items = await _fetch_listings(session, city=city, limit=limit, offset=offset)
+            async with asyncio.timeout(POSTGRES_TIMEOUT_SECONDS):
+                async with sessionmaker() as session:
+                    items = await _fetch_listings(session, city=city, limit=limit, offset=offset)
+        except TimeoutError as exc:
+            logger.exception(" - mcp_db list_listings - превышен таймаут запроса к Postgres")
+            metrics.inc("mcp.db.list_listings.timeout")
+            raise RuntimeError("Превышен таймаут при чтении из Postgres") from exc
         except Exception:
+            logger.exception(" - mcp_db list_listings - ошибка выполнения")
             metrics.inc("mcp.db.list_listings.fail")
             raise
         metrics.inc("mcp.db.list_listings.success")
