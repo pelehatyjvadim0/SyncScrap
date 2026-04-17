@@ -1,11 +1,11 @@
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from root.worker_scheduler.logic.tick_runner import SchedulerTickRunner, _due_threshold_naive_utc
+from root.apps.workers.scheduler.logic.tick_runner import SchedulerTickRunner, _due_threshold_naive_utc
 
 
 def test_due_threshold_is_naive_utc() -> None:
-    with patch("root.worker_scheduler.logic.tick_runner.settings") as s:
+    with patch("root.apps.workers.scheduler.logic.tick_runner.settings") as s:
         s.scheduler.STALE_AFTER_SECONDS = 120
         t = _due_threshold_naive_utc()
         assert t.tzinfo is None
@@ -13,7 +13,7 @@ def test_due_threshold_is_naive_utc() -> None:
 
 def test_run_tick_disabled_skips_work() -> None:
     async def _run() -> None:
-        with patch("root.worker_scheduler.logic.tick_runner.settings", new_callable=AsyncMock) as s:
+        with patch("root.apps.workers.scheduler.logic.tick_runner.settings", new_callable=AsyncMock) as s:
             s.scheduler.ENABLED = False
             await SchedulerTickRunner().run_tick()
 
@@ -40,17 +40,17 @@ def test_run_tick_publishes_without_mark_in_db() -> None:
 
     async def _run() -> None:
         with (
-            patch("root.worker_scheduler.logic.tick_runner.settings") as s,
+            patch("root.apps.workers.scheduler.logic.tick_runner.settings") as s,
             patch(
-                "root.worker_scheduler.logic.tick_runner.sessionmaker",
+                "root.apps.workers.scheduler.logic.tick_runner.sessionmaker",
                 sessionmaker_mock,
             ),
             patch(
-                "root.worker_scheduler.logic.tick_runner.TargetUrlDAO.fetch_due_urls",
+                "root.apps.workers.scheduler.logic.tick_runner.TargetUrlDAO.fetch_due_urls",
                 fetch_mock,
             ),
             patch(
-                "root.worker_scheduler.logic.tick_runner.URLSpawner.append_urls_in_queue",
+                "root.apps.workers.scheduler.logic.tick_runner.URLSpawner.append_discovery_tasks",
                 append_mock,
             ),
         ):

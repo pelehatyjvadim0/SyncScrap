@@ -17,8 +17,14 @@ curl_cffi
 httpx
 beautifulsoup4
 aiofiles
+playwright>=1.40.0
 
 redis 
+qdrant-client
+sentence-transformers
+
+# MCP (stdio серверы в root/mcp_servers/)
+mcp
 
 # Тесты
 pytest

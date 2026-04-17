@@ -11,6 +11,11 @@ class RedisManager:
             settings.redis.REDIS_URL, encoding="utf-8", decode_responses=True
         )
 
+    async def set_nx_ttl(self, key: str, ttl: int) -> bool:
+        if self.redis is None:
+            return False
+        return await self.redis.set(key, "1", ex=ttl, nx=True)
+
     async def set_html(self, key: str, html: str, expire: int = 600):
         if self.redis is None:
             raise RuntimeError("Redis client is not connected")

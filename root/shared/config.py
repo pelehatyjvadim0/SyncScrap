@@ -84,6 +84,19 @@ class DownloaderSettings(BaseSettings):
     )
 
 
+class PlaywrightWorkerSettings(BaseSettings):
+    # Воркер Chromium: загрузка HTML через Playwright → Redis → downloaded_pages.
+
+    HEADLESS: bool = True # запускать с без окна
+    NAVIGATION_TIMEOUT_MS: int = 120_000 # таймаут навигации в миллисекундах
+    VIEWPORT_WIDTH: int = 1280
+    VIEWPORT_HEIGHT: int = 720
+
+    model_config = SettingsConfigDict(
+        env_prefix="PLAYWRIGHT_", env_file=".env", extra="ignore"
+    )
+
+
 class SchedulerSettings(BaseSettings):
     """Периодическая отправка целей из БД в raw_urls."""
 
@@ -104,12 +117,58 @@ class SchedulerSettings(BaseSettings):
     )
 
 
+class QdrantSettings(BaseSettings):
+    URL: str = "http://localhost:6333"
+    API_KEY: str | None = None
+    COLLECTION_NAME: str = "listings_mvp"
+    VECTOR_SIZE: int = 384
+
+    model_config = SettingsConfigDict(
+        env_prefix="QDRANT_", env_file=".env", extra="ignore"
+    )
+
+
+class EmbeddingSettings(BaseSettings):
+    MODEL_NAME: str = "all-MiniLM-L6-v2"
+    BATCH_SIZE: int = 32
+
+    model_config = SettingsConfigDict(
+        env_prefix="EMBEDDING_", env_file=".env", extra="ignore"
+    )
+
+
+class OrchestratorSettings(BaseSettings):
+    ENABLED: bool = True
+    DEFAULT_LIMIT: int = 10
+    ENABLE_GUARDRAIL: bool = True
+
+    model_config = SettingsConfigDict(
+        env_prefix="ORCHESTRATOR_", env_file=".env", extra="ignore"
+    )
+
+
+class ObservabilitySettings(BaseSettings):
+    ENABLE_METRICS: bool = True
+    SLOW_TASK_MS: int = 5000
+
+    model_config = SettingsConfigDict(
+        env_prefix="OBS_", env_file=".env", extra="ignore"
+    )
+
+
 class Settings(BaseSettings):
     db: DB_Settings = Field(default_factory=DB_Settings)
     rabbit: RabbitMq_Settings = Field(default_factory=RabbitMq_Settings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
     downloader: DownloaderSettings = Field(default_factory=DownloaderSettings)
+    playwright_worker: PlaywrightWorkerSettings = Field(
+        default_factory=PlaywrightWorkerSettings
+    )
     scheduler: SchedulerSettings = Field(default_factory=SchedulerSettings)
+    qdrant: QdrantSettings = Field(default_factory=QdrantSettings)
+    embedding: EmbeddingSettings = Field(default_factory=EmbeddingSettings)
+    orchestrator: OrchestratorSettings = Field(default_factory=OrchestratorSettings)
+    observability: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

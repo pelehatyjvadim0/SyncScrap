@@ -1,0 +1,4 @@
+faststream[rabbit,cli]
+pydantic-settings
+sqlalchemy[asyncio]
+asyncpg

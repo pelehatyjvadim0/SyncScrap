@@ -1,0 +1,6 @@
+faststream[rabbit,cli]
+pydantic-settings
+selectolax
+curl_cffi
+httpx
+redis
