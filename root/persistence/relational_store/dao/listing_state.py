@@ -5,7 +5,7 @@ from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from root.persistence.models.listing_state import ListingState
+from root.persistence.relational_store.models.listing_state import ListingState
 
 
 class ListingStateDAO:

@@ -3,4 +3,3 @@ pydantic-settings
 sqlalchemy[asyncio]
 asyncpg
 qdrant-client
-sentence-transformers

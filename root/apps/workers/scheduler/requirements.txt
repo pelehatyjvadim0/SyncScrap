@@ -1,6 +1,5 @@
-faststream[rabbit, cli]
+faststream[rabbit,cli]
 sqlalchemy[asyncio]
 asyncpg
 pydantic-settings
-fastapi
 alembic

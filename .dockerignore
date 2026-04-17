@@ -1,0 +1,33 @@
+.git
+.gitignore
+
+# Python caches / virtualenvs
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Local environments
+venv/
+.venv/
+.venv_test/
+.venv_tests/
+
+# Editor/OS junk
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Runtime/generated artifacts
+*.log
+*.pid
+tmp/
+temp/

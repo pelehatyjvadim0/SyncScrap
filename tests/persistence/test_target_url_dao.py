@@ -1,6 +1,6 @@
 from sqlalchemy.dialects import postgresql
 
-from root.persistence.dao.target_url import TargetUrlDAO
+from root.persistence.relational_store.dao.target_url import TargetUrlDAO
 from root.persistence.models.target import TargetUrl
 
 

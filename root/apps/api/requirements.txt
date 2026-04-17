@@ -8,4 +8,3 @@ redis
 curl_cffi
 httpx
 qdrant-client
-sentence-transformers

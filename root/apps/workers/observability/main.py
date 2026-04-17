@@ -1,8 +1,8 @@
 import json
 import logging
 
-from root.persistence.connection import sessionmaker
-from root.persistence.dao.ingestion_event import IngestionEventDAO
+from root.persistence.relational_store.connection import sessionmaker
+from root.persistence.relational_store.dao.ingestion_event import IngestionEventDAO
 from root.shared.queues import DEAD_LETTER
 from root.shared.rabbitmq import broker, faststream_app
 

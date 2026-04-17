@@ -118,6 +118,7 @@ class SchedulerSettings(BaseSettings):
 
 
 class QdrantSettings(BaseSettings):
+    ENABLED: bool = False
     URL: str = "http://localhost:6333"
     API_KEY: str | None = None
     COLLECTION_NAME: str = "listings_mvp"
@@ -129,21 +130,12 @@ class QdrantSettings(BaseSettings):
 
 
 class EmbeddingSettings(BaseSettings):
+    ENABLED: bool = False
     MODEL_NAME: str = "all-MiniLM-L6-v2"
     BATCH_SIZE: int = 32
 
     model_config = SettingsConfigDict(
         env_prefix="EMBEDDING_", env_file=".env", extra="ignore"
-    )
-
-
-class OrchestratorSettings(BaseSettings):
-    ENABLED: bool = True
-    DEFAULT_LIMIT: int = 10
-    ENABLE_GUARDRAIL: bool = True
-
-    model_config = SettingsConfigDict(
-        env_prefix="ORCHESTRATOR_", env_file=".env", extra="ignore"
     )
 
 
@@ -167,7 +159,6 @@ class Settings(BaseSettings):
     scheduler: SchedulerSettings = Field(default_factory=SchedulerSettings)
     qdrant: QdrantSettings = Field(default_factory=QdrantSettings)
     embedding: EmbeddingSettings = Field(default_factory=EmbeddingSettings)
-    orchestrator: OrchestratorSettings = Field(default_factory=OrchestratorSettings)
     observability: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

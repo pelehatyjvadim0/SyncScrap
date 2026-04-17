@@ -1,23 +1,28 @@
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from root.apps.api.v1.schemas import (
     BulkTargetsRequest,
     BulkTargetsResponse,
+    DiscoveryEnqueueRequest,
+    DiscoveryEnqueueResponse,
     HybridSearchItem,
     HybridSearchRequest,
     HybridSearchResponse,
-    OrchestratorIntentRequest,
-    OrchestratorIntentResponse,
 )
-from root.apps.api.v1.services import BulkTargetsService, InvalidTargetUrlError, OrchestratorService
+from root.apps.api.v1.services import (
+    BulkTargetsService,
+    DiscoveryService,
+    InvalidTargetUrlError,
+    SearchService,
+)
 from root.shared.dependencies import DependsGenerator
 from root.shared.observability import metrics
 from root.contracts.v1.pipeline_messages import RetrievalQuery
-from root.apps.orchestrator.service import LLMOrchestrator, UserIntent
 
 router = APIRouter()
-orchestrator = LLMOrchestrator()
 
 
 @router.post(
@@ -55,12 +60,12 @@ async def hybrid_search(
     query = RetrievalQuery(
         query=body.query,
         city=body.city,
-        min_price=body.min_price,
-        max_price=body.max_price,
+        min_price=Decimal(str(body.min_price)) if body.min_price is not None else None,
+        max_price=Decimal(str(body.max_price)) if body.max_price is not None else None,
         limit=body.limit,
     )
     with metrics.timer("api.search.hybrid.ms"):
-        items = await OrchestratorService.run_query(session, query)
+        items = await SearchService.run_query(session, query)
     metrics.inc("api.search.hybrid.ok")
     return HybridSearchResponse(items=[HybridSearchItem.model_validate(item) for item in items])
 
@@ -76,19 +81,20 @@ async def read_metrics() -> dict:
 
 
 @router.post(
-    "/orchestrator/intent",
-    response_model=OrchestratorIntentResponse,
-    summary="LLM-orchestrator: запуск discovery по user intent",
+    "/discovery/enqueue",
+    response_model=DiscoveryEnqueueResponse,
+    summary="Поставить discovery URL в очередь",
 )
-async def orchestrator_intent(body: OrchestratorIntentRequest) -> OrchestratorIntentResponse:
-    with metrics.timer("api.orchestrator.intent.ms"):
-        result = await orchestrator.dispatch(
-            UserIntent(
-                source=body.source,
-                city=body.city,
-                category=body.category,
-                search_urls=[str(url) for url in body.search_urls],
-            )
+async def enqueue_discovery(body: DiscoveryEnqueueRequest) -> DiscoveryEnqueueResponse:
+    with metrics.timer("api.discovery.enqueue.ms"):
+        queued = await DiscoveryService.enqueue(
+            search_urls=[str(url) for url in body.search_urls],
+            source=body.source,
+            city=body.city,
+            category=body.category,
         )
-    metrics.inc("api.orchestrator.intent.ok")
-    return OrchestratorIntentResponse.model_validate(result)
+    metrics.inc("api.discovery.enqueue.ok")
+    return DiscoveryEnqueueResponse(
+        queued=queued,
+        queued_count=len(queued),
+    )

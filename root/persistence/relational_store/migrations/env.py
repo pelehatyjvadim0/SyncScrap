@@ -5,13 +5,13 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-import root.persistence.models.listing  # noqa: F401 — регистрация таблицы в metadata
-import root.persistence.models.listing_state  # noqa: F401
-import root.persistence.models.listing_version  # noqa: F401
-import root.persistence.models.ingestion_event  # noqa: F401
-import root.persistence.models.target  # noqa: F401
+import root.persistence.relational_store.models.listing  # noqa: F401
+import root.persistence.relational_store.models.listing_state  # noqa: F401
+import root.persistence.relational_store.models.listing_version  # noqa: F401
+import root.persistence.relational_store.models.ingestion_event  # noqa: F401
+import root.persistence.relational_store.models.target  # noqa: F401
 
-from root.persistence.models.base import BaseModel
+from root.persistence.relational_store.models.base import BaseModel
 
 from root.shared.config import settings
 

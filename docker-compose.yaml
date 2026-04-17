@@ -54,6 +54,7 @@ services:
     image: qdrant/qdrant:v1.13.2
     container_name: scraping_qdrant
     restart: unless-stopped
+    profiles: ["vector"]
     ports:
       - "6333:6333"
     healthcheck:
@@ -78,14 +79,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      qdrant:
-        condition: service_healthy
     env_file: .env
     environment:
       DB_HOST: postgres
       RABBITMQ_HOST: rabbitmq
       REDIS_HOST: redis
       REDIS_CONNECTION_URL: redis://redis:6379/0
+      QDRANT_ENABLED: ${QDRANT_ENABLED:-false}
       QDRANT_URL: http://qdrant:6333
     volumes:
       - .:/app
@@ -142,7 +142,7 @@ services:
             if [ "$$i" -gt 90 ]; then echo "DNS: postgres/rabbitmq not resolvable"; exit 1; fi
             sleep 1
           done
-          alembic -c root/persistence/alembic.ini upgrade head && exec faststream run root.apps.workers.scheduler.main:faststream_app
+          alembic -c root/persistence/relational_store/alembic.ini upgrade head && exec faststream run root.apps.workers.scheduler.main:faststream_app
 
   scout:
     build:
@@ -153,9 +153,13 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file: .env
     environment:
       RABBITMQ_HOST: rabbitmq
+      REDIS_HOST: redis
+      REDIS_CONNECTION_URL: redis://redis:6379/0
 
   delta:
     build:
@@ -192,6 +196,8 @@ services:
       REDIS_HOST: redis
       REDIS_CONNECTION_URL: redis://redis:6379/0
       DB_HOST: postgres
+      EMBEDDING_ENABLED: ${EMBEDDING_ENABLED:-false}
+      QDRANT_ENABLED: ${QDRANT_ENABLED:-false}
 
   embedding:
     build:
@@ -199,6 +205,7 @@ services:
       dockerfile: root/apps/workers/embedding/Dockerfile
     container_name: worker_embedding
     restart: unless-stopped
+    profiles: ["vector"]
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -208,8 +215,10 @@ services:
         condition: service_healthy
     env_file: .env
     environment:
+      EMBEDDING_ENABLED: ${EMBEDDING_ENABLED:-false}
       RABBITMQ_HOST: rabbitmq
       DB_HOST: postgres
+      QDRANT_ENABLED: ${QDRANT_ENABLED:-false}
       QDRANT_URL: http://qdrant:6333
 
   observability:

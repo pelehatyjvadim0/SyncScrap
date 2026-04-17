@@ -1,4 +1,4 @@
-# Сообщения между очередями RabbitMQ - единый контракт этапов MAS-пайплайна.
+# Сообщения между очередями RabbitMQ - единый контракт этапов ingestion-пайплайна.
 # При изменении полей - поднять версию пакета contracts и миграции consumers.
 
 from datetime import datetime, timezone

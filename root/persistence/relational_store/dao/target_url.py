@@ -6,7 +6,7 @@ from sqlalchemy import or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from root.persistence.models.target import TargetUrl
+from root.persistence.relational_store.models.target import TargetUrl
 
 logger = logging.getLogger(__name__)
 

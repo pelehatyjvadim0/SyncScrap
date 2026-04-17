@@ -1,6 +1,6 @@
 # Реэкспорт контрактов v1 - импортируй отсюда или из подмодулей root.contracts.v1.*.
-# Версия контрактов сообщений пайплайна (v1). Единая точка импорта для воркеров, API и будущих MCP.
-# Не смешивать с бизнес-логикой - только Pydantic-модели и общие поля (trace, idempotency при добавлении).
+# Версия контрактов сообщений пайплайна (v1). Единая точка импорта для воркеров и API.
+# Не смешивать с бизнес-логикой - только Pydantic-модели и общие поля пайплайна.
 
 from root.contracts.v1.canonical_listing import CanonicalListing
 from root.contracts.v1.discovered_listing import DiscoveredListing

@@ -2,3 +2,5 @@ faststream[rabbit,cli]
 pydantic-settings
 sqlalchemy[asyncio]
 asyncpg
+curl_cffi
+redis

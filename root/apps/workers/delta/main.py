@@ -1,9 +1,9 @@
 import json
 import logging
 
-from root.persistence.connection import sessionmaker
-from root.persistence.dao.ingestion_event import IngestionEventDAO
-from root.persistence.dao.listing_state import ListingStateDAO
+from root.persistence.relational_store.connection import sessionmaker
+from root.persistence.relational_store.dao.ingestion_event import IngestionEventDAO
+from root.persistence.relational_store.dao.listing_state import ListingStateDAO
 from root.shared.dead_letter import publish_dead_letter
 from root.shared.queues import DISCOVERED_ITEMS, EXTRACTION_URLS
 from root.shared.rabbitmq import broker, faststream_app

@@ -5,7 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from root.persistence.models.listing import Listing
+from root.persistence.relational_store.models.listing import Listing
 
 logger = logging.getLogger(__name__)
 

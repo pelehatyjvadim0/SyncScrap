@@ -15,7 +15,7 @@ class DependsGenerator:
 
     @classmethod
     async def get_db(cls):
-        from root.persistence.connection import sessionmaker
+        from root.persistence.relational_store.connection import sessionmaker
         async with sessionmaker() as session:
             try:
                 yield session

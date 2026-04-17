@@ -1,8 +1,8 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
-from root.persistence.connection import sessionmaker
-from root.persistence.dao.target_url import TargetUrlDAO
+from root.persistence.relational_store.connection import sessionmaker
+from root.persistence.relational_store.dao.target_url import TargetUrlDAO
 from root.shared.config import settings
 from root.shared.url_spawner import URLSpawner
 

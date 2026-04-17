@@ -1,10 +1,11 @@
 import json
 import logging
 
-from root.persistence.connection import sessionmaker
-from root.persistence.dao.ingestion_event import IngestionEventDAO
-from root.persistence.dao.listing_version import ListingVersionDAO
-from root.persistence.dao.listing_state import ListingStateDAO
+from root.persistence.relational_store.connection import sessionmaker
+from root.persistence.relational_store.dao.ingestion_event import IngestionEventDAO
+from root.persistence.relational_store.dao.listing_version import ListingVersionDAO
+from root.persistence.relational_store.dao.listing_state import ListingStateDAO
+from root.shared.config import settings
 from root.shared.dead_letter import publish_dead_letter
 from root.shared.queues import EMBEDDING_TASKS, NORMALIZED_ITEMS
 from root.shared.rabbitmq import broker, faststream_app
@@ -64,20 +65,23 @@ async def handle_normalize(msg) -> None:
         )
         await session.commit()
 
-    embedding_task = EmbeddingTask(
-        listing_id=canonical.listing_id,
-        idempotency_key=canonical.idempotency_key,
-        version=canonical.version,
-        text=f"{canonical.title}\n{canonical.description_markdown}",
-        metadata={
-            "price": float(canonical.price) if canonical.price is not None else None,
-            "city": canonical.city,
-            "scam_score": canonical.scam_score,
-            "url": str(canonical.url),
-        },
-    )
-    await broker.publish(message=embedding_task.model_dump(mode="json"), queue=EMBEDDING_TASKS)
-    logger.info(" [Normalize] canonical saved and embedding queued: %s", canonical.idempotency_key)
+    if settings.embedding.ENABLED and settings.qdrant.ENABLED:
+        embedding_task = EmbeddingTask(
+            listing_id=canonical.listing_id,
+            idempotency_key=canonical.idempotency_key,
+            version=canonical.version,
+            text=f"{canonical.title}\n{canonical.description_markdown}",
+            metadata={
+                "price": float(canonical.price) if canonical.price is not None else None,
+                "city": canonical.city,
+                "scam_score": canonical.scam_score,
+                "url": str(canonical.url),
+            },
+        )
+        await broker.publish(message=embedding_task.model_dump(mode="json"), queue=EMBEDDING_TASKS)
+        logger.info(" [Normalize] canonical saved and embedding queued: %s", canonical.idempotency_key)
+    else:
+        logger.info(" [Normalize] canonical saved without embedding: %s", canonical.idempotency_key)
 
 
 @faststream_app.after_startup

@@ -1,10 +1,11 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from root.apps.api.v1.services.guardrail import LocalGuardrail
 from root.contracts.v1.pipeline_messages import RetrievalQuery
 from root.persistence.services.hybrid_search import HybridSearchService
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
-class OrchestratorService:
+class SearchService:
     @staticmethod
     async def run_query(session: AsyncSession, query: RetrievalQuery) -> list[dict]:
         candidates = await HybridSearchService.search(

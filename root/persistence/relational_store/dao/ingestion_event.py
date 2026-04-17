@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from root.persistence.models.ingestion_event import IngestionEvent
+from root.persistence.relational_store.models.ingestion_event import IngestionEvent
 
 
 class IngestionEventDAO:

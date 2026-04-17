@@ -2,7 +2,7 @@ from pydantic import HttpUrl, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from root.apps.api.v1.schemas.bulk_targets import BulkTargetsResponse
-from root.persistence.dao.target_url import TargetUrlDAO
+from root.persistence.relational_store.dao.target_url import TargetUrlDAO
 
 
 class InvalidTargetUrlError(Exception):

@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from root.persistence.models.listing_version import ListingVersion
+from root.persistence.relational_store.models.listing_version import ListingVersion
 
 
 class ListingVersionDAO:
